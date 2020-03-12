@@ -18,14 +18,14 @@ type Wallet struct {
 	Token string `json:"token"`
 }
 
-type Music struct {
-	Title    string `json:"title"`
-	Singer   string `json:"singer"`
+type Cow struct {
+	Name     string `json:"name"`
+	Maker    string `json:"maker"`
 	Price    string `json:"price"`
 	WalletID string `json:"walletid"`
 }
 
-type MusicKey struct {
+type CowKey struct {
 	Key string
 	Idx int
 }
@@ -41,12 +41,12 @@ func (s *SmartContract) Invoke(APIstub shim.ChaincodeStubInterface) pb.Response 
 		return s.initWallet(APIstub)
 	} else if function == "getWallet" {
 		return s.getWallet(APIstub, args)
-	} else if function == "setMusic" {
-		return s.setMusic(APIstub, args)
-	} else if function == "getAllMusic" {
-		return s.getAllMusic(APIstub)
-	} else if function == "purchaseMusic" {
-		return s.purchaseMusic(APIstub, args)
+	} else if function == "setCow" {
+		return s.setCow(APIstub, args)
+	} else if function == "getAllCow" {
+		return s.getAllCow(APIstub)
+	} else if function == "purchaseCow" {
+		return s.purchaseCow(APIstub, args)
 	}
 	fmt.Println("Please check your function : " + function)
 	return shim.Error("Unknown function")
@@ -72,61 +72,61 @@ func (s *SmartContract) initWallet(APIstub shim.ChaincodeStubInterface) pb.Respo
 
 func generateKey(stub shim.ChaincodeStubInterface) []byte {
 	var isFirst bool = false
-	musickeyAsBytes, err := stub.GetState("latestKey")
+	cowkeyAsBytes, err := stub.GetState("latestKey")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	musickey := MusicKey{}
-	json.Unmarshal(musickeyAsBytes, &musickey)
+	cowkey := CowKey{}
+	json.Unmarshal(cowkeyAsBytes, &cowkey)
 	var tempIdx string
-	tempIdx = strconv.Itoa(musickey.Idx)
-	fmt.Println(musickey)
-	fmt.Println("Key is " + strconv.Itoa(len(musickey.Key)))
-	if len(musickey.Key) == 0 || musickey.Key == "" {
+	tempIdx = strconv.Itoa(cowkey.Idx)
+	fmt.Println(cowkey)
+	fmt.Println("Key is " + strconv.Itoa(len(cow.Key)))
+	if len(cowkey.Key) == 0 || cowkey.Key == "" {
 		isFirst = true
-		musickey.Key = "MS"
+		cowkey.Key = "MS"
 	}
 	if !isFirst {
-		musickey.Idx = musickey.Idx + 1
+		cowkey.Idx = cowkey.Idx + 1
 	}
-	fmt.Println("Last MusicKey is " + musickey.Key + " : " + tempIdx)
-	returnValueBytes, _ := json.Marshal(musickey)
+	fmt.Println("Last CowKey is " + cowkey.Key + " : " + tempIdx)
+	returnValueBytes, _ := json.Marshal(cowkey)
 
 	return returnValueBytes
 }
 
-func (s *SmartContract) setMusic(APIstub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (s *SmartContract) setCow(APIstub shim.ChaincodeStubInterface, args []string) pb.Response {
 	if len(args) != 4 {
 		return shim.Error("Incorrect number of arguments. Expecting 4")
 	}
 
-	var musickey = MusicKey{}
-	json.Unmarshal(generateKey(APIstub), &musickey)
-	keyidx := strconv.Itoa(musickey.Idx)
-	fmt.Println("Key : " + musickey + ", Idx : " + keyidx)
+	var cowkey = CowKey{}
+	json.Unmarshal(generateKey(APIstub), &cowkey)
+	keyidx := strconv.Itoa(cowkey.Idx)
+	fmt.Println("Key : " + cowkey + ", Idx : " + keyidx)
 
-	var music = Music{Title: args[0], Singer: args[1], Price: args[2], WalletID: args[3]}
-	musicAsJSONBytes, _ := json.Marshal(music)
-	var keyString = musickey.Key + keyidx
-	fmt.Println("musickey is " + keyString)
-	err := APIstub.PutState(keyString, musicAsJSONBytes)
+	var cow = Cow{Name: args[0], Maker: args[1], Price: args[2], WalletID: args[3]}
+	cowAsJSONBytes, _ := json.Marshal(cow)
+	var keyString = cowkey.Key + keyidx
+	fmt.Println("cowkey is " + keyString)
+	err := APIstub.PutState(keyString, cowAsJSONBytes)
 	if err != nil {
-		return shim.Error(fmt.Sprintf("Failed to record music catch: %s", musickey))
+		return shim.Error(fmt.Sprintf("Failed to record cow catch: %s", cowkey))
 	}
-	musickeyAsBytes, _ := json.Marshal(musickey)
-	APIstub.PutState("latestKey", musickeyAsBytes)
+	cowkeyAsBytes, _ := json.Marshal(cowkey)
+	APIstub.PutState("latestKey", cowkeyAsBytes)
 
 	return shim.Success(nil)
 }
 
-func (s *SmartContract) getAllMusic(APIstub shim.ChaincodeStubInterface) pb.Response {
-	musickeyAsBytes, _ := APIstub.GetState("latestKey")
-	musickey := MusicKey{}
-	json.Unmarshal(musickeyAsBytes, &musickey)
-	idxStr := strconv.Itoa(musickey.Idx + 1)
+func (s *SmartContract) getAllCow(APIstub shim.ChaincodeStubInterface) pb.Response {
+	cowkeyAsBytes, _ := APIstub.GetState("latestKey")
+	cowkey := CowKey{}
+	json.Unmarshal(cowkeyAsBytes, &cowkey)
+	idxStr := strconv.Itoa(cowkey.Idx + 1)
 
 	var startKey = "MS0"
-	var endKey = musickey.Key + idxStr
+	var endKey = cowkey.Key + idxStr
 
 	resultsIter, err := APIstub.GetStateByRange(startKey, endKey)
 	if err != nil {
@@ -161,7 +161,7 @@ func (s *SmartContract) getAllMusic(APIstub shim.ChaincodeStubInterface) pb.Resp
 	return shim.Success(buffer.Bytes())
 }
 
-func (t *SmartContract) purchaseMusic(APIstub shim.ChaincodeStubInterface, args []string) pb.Response {
+func (t *SmartContract) purchaseCow(APIstub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var A, B string
 	var err error
 
@@ -172,14 +172,14 @@ func (t *SmartContract) purchaseMusic(APIstub shim.ChaincodeStubInterface, args 
 	A = args[0]
 	B = args[1]
 
-	musicAsBytes, err := APIstub.GetState(args[2])
+	cowAsBytes, err := APIstub.GetState(args[2])
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	music := Music{}
-	json.Unmarshal(musicAsBytes, &music)
-	musicprice, _ := strconv.Atoi(string(music.Price))
+	cow := Cow{}
+	json.Unmarshal(cowAsBytes, &cow)
+	cowprice, _ := strconv.Atoi(string(cow.Price))
 
 	AAsBytes, err := APIstub.GetState(A)
 	if err != nil {
@@ -203,8 +203,8 @@ func (t *SmartContract) purchaseMusic(APIstub shim.ChaincodeStubInterface, args 
 	json.Unmarshal(BAsBytes, &walletB)
 	tokenB, _ := strconv.Atoi(string(walletB.Token))
 
-	walletA.Token = strconv.Itoa(tokenA - musicprice)
-	walletB.Token = strconv.Itoa(tokenB - musicprice)
+	walletA.Token = strconv.Itoa(tokenA - cowprice)
+	walletB.Token = strconv.Itoa(tokenB - cowprice)
 	updatedAAsBytes, _ := json.Marshal(walletA)
 	updatedBAsBytes, _ := json.Marshal(walletB)
 	APIstub.PutState(args[0], updatedAAsBytes)
